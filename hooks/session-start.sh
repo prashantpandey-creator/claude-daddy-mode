@@ -2,36 +2,48 @@
 # Orchestrator-First pre-flight: run doc_path_audit and inject findings as
 # additionalContext so the agent knows the stale-path state before its first action.
 
-REPO_ROOT="$(cd "$(dirname "$0")/../../purangpt" 2>/dev/null && pwd)"
+# Self-locate: the hook lives at <REPO_ROOT>/.claude/hooks/session-start.sh
+REPO_ROOT="$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)"
 
-if [ ! -d "$REPO_ROOT" ]; then
-  # Silent exit — don't break session startup if the backend repo isn't found
+if [ ! -d "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT/tools/doc_path_audit" ]; then
+  # Silent exit — never break session startup if the tool isn't installed
+  echo '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":""}}'
+  exit 0
+fi
+
+# Pick a Python interpreter: prefer venv, then .venv, then python3, then python
+if [ -x "$REPO_ROOT/venv/bin/python" ]; then
+  PY="$REPO_ROOT/venv/bin/python"
+elif [ -x "$REPO_ROOT/.venv/bin/python" ]; then
+  PY="$REPO_ROOT/.venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+  PY="python3"
+elif command -v python >/dev/null 2>&1; then
+  PY="python"
+else
   echo '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":""}}'
   exit 0
 fi
 
 # Run doc_path_audit — outputs JSON envelope
-RESULT=$(cd "$REPO_ROOT" && venv/bin/python -m tools.doc_path_audit.check --json 2>/dev/null)
+RESULT=$(cd "$REPO_ROOT" && "$PY" -m tools.doc_path_audit.check --json 2>/dev/null)
 
 if [ -z "$RESULT" ]; then
   echo '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":""}}'
   exit 0
 fi
 
-# Extract missing paths that look like real code files (.py .ts .md)
-MISSING=$(echo "$RESULT" | python3 -c "
+# Extract missing paths that look like real code files
+MISSING=$(echo "$RESULT" | "$PY" -c "
 import json, sys
 d = json.load(sys.stdin)
 if not d.get('success'):
     print('')
     sys.exit(0)
-CROSS_REPO_PREFIXES = ('purangpt-next/', 'purangpt/')
-HISTORICAL_MENTIONS = ('webhook.py',)  # disabled services referenced in prose
+CODE_EXTS = ('.py', '.ts', '.tsx', '.js', '.jsx', '.md', '.go', '.rs', '.rb')
 items = [
     m for m in d['data']['missing']
-    if any(m['path'].endswith(ext) for ext in ('.py', '.ts', '.md', '.js', '.tsx'))
-    and not any(m['path'].startswith(p) for p in CROSS_REPO_PREFIXES)
-    and m['path'] not in HISTORICAL_MENTIONS
+    if any(m['path'].endswith(ext) for ext in CODE_EXTS)
 ]
 if not items:
     print('All doc path claims verified against disk.')
@@ -51,7 +63,7 @@ else
 fi
 
 # Output the SessionStart hook envelope
-python3 -c "
+"$PY" -c "
 import json, sys
 context = sys.argv[1]
 print(json.dumps({

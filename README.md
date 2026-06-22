@@ -1,10 +1,37 @@
-# Orchestrator-First
+# Claude Daddy Mode
 
-A methodology for Claude Code sessions that replaces decision-tree sub-agents with deterministic, tested, JSON-contract scripts — keeping raw tool output out of context and reserving the model for genuine judgment.
+A two-piece kit for Claude Code that makes sessions **bolder and tighter**:
+
+1. **Orchestrator-First methodology** — replace decision-tree sub-agents with deterministic, tested, JSON-contract scripts. Keep raw tool output out of context. Reserve the model for genuine judgment.
+2. **Daddy persona** — a sassy senior-dev output style that biases the model toward **pushing back when you're wrong** instead of nodding along. Politeness produces worse code review; swagger produces better code review.
+
+Together: Claude argues with you when you're cursed, ships surgically when you're right, and stops burning context on grep dumps.
 
 Built and proven on a real production codebase ([PuranGPT](https://purangpt.com)).
 
 ---
+
+## TL;DR — one-command install
+
+```bash
+mkdir -p ~/.claude/skills
+curl -o ~/.claude/skills/claude-daddy-mode.md \
+  https://raw.githubusercontent.com/prashantpandey-creator/claude-daddy-mode/main/skills/claude-daddy-mode.md
+```
+
+Then in any Claude Code session, in the project you want to wire up:
+
+```
+/claude-daddy-mode
+```
+
+The skill installs both halves: the methodology into the current project, the persona into your global `~/.claude/`. It asks before touching anything.
+
+> Want only one half? `/claude-daddy-mode` understands "install the persona" or "install the orchestrator" — say which.
+
+---
+
+# Part 1 — Orchestrator-First (the engineering half)
 
 ## The core idea
 
@@ -16,8 +43,6 @@ Every Claude Code session pays a context tax. The two biggest drains are:
 Most "go look at the output and decide" tasks are pure decision trees. They don't need judgment — they need a script.
 
 **Rule 0 — Orchestrator-First:** before spawning a sub-agent or ingesting raw tool output, ask: *is this a fixed decision tree?* If yes → call a deterministic script under `tools/`, consume only its `data` field. Sub-agents are last resort, for genuine judgment over unstructured content only.
-
----
 
 ## The two rules
 
@@ -56,8 +81,6 @@ On failure: `success: false`, `data: null`, `errors: [{code, message}]`. Never r
 
 When the user provides an API key or secret, don't ask them to perform manual dashboard steps. Use the key to automate setup via REST APIs or CLIs. Always pick the most automated path.
 
----
-
 ## The three patterns
 
 ### Pattern 1 — Pre-flight Orientation ✅ implemented + enforced
@@ -72,8 +95,6 @@ When the user provides an API key or secret, don't ask them to perform manual da
 
 → [`tools/python/doc_path_audit/`](tools/python/doc_path_audit/) | [`hooks/session-start.sh`](hooks/session-start.sh)
 
----
-
 ### Pattern 2 — Branch-the-Future
 
 **Problem:** The agent hits an irreducibly empirical fork — K candidates where only running the real system reveals which is right. Standard methodology serializes: pick one, build it, discover it's wrong, unwind, repeat.
@@ -86,8 +107,6 @@ When the user provides an API key or secret, don't ask them to perform manual da
 
 **Proven:** modeled a real 4-commit, 3-hour serial revert loop on PuranGPT and adjudicated it in milliseconds — picking the same winner the human eventually reverted to. See [`examples/purangpt-session.md`](examples/purangpt-session.md).
 
----
-
 ### Pattern 3 — Assumption Tripwires *(design)*
 
 **Problem:** The agent makes a wrong assumption, unwinds, records it in FINDINGS.md — then pays the same cost again next session because the lesson is prose, not an executable gate.
@@ -98,36 +117,50 @@ When the user provides an API key or secret, don't ask them to perform manual da
 
 ---
 
-## How to use this in your project
+# Part 2 — The Daddy persona (the voice half)
 
-### Quickest path — one slash command
+The persona is a Claude Code **output style**. It runs at the system-prompt level so it survives long sessions and context compression.
 
-Copy the install skill to your global Claude Code skills directory:
+## Why a persona at all
+
+Politeness produces a yes-machine. A sassy frame produces a senior dev who **tells you when you're wrong**. The voice is engineered to bias toward truth-telling — it's not a bit, it's a behavioral lever.
+
+Non-negotiables baked into the style:
+- Lead with the answer, never with throat-clearing
+- Never add filler / sign-offs / closing reassurances
+- **Technical accuracy and honesty are untouchable** — roast the code, never fake the facts
+- Concise by default — the fun lives *inside* the answer, not bolted around it
+
+## Install just the persona
+
+If you don't want the methodology, you can install only the voice:
 
 ```bash
-mkdir -p ~/.claude/skills
-curl -o ~/.claude/skills/orchestrator-first.md \
-  https://raw.githubusercontent.com/prashantpandey-creator/orchestrator-first/main/skills/orchestrator-first.md
+mkdir -p ~/.claude/output-styles
+curl -o ~/.claude/output-styles/daddy.md \
+  https://raw.githubusercontent.com/prashantpandey-creator/claude-daddy-mode/main/persona/daddy.md
 ```
 
-Then in any Claude Code session, in the project you want to install into:
+Then in Claude Code: `/output-style daddy`
 
-```
-/orchestrator-first
-```
+## Rename "daddy"
 
-Claude will copy the tools, wire the hook, patch `settings.local.json`, and confirm everything works. One command, any project.
+The keyword is just my handle. Open `~/.claude/output-styles/daddy.md`, find/replace `daddy` with `chief` / `boss` / `partner` / your actual name, rename the file, and `/output-style <new-name>`.
+
+Voice rules are the product. The name is the handle. See [`persona/README.md`](persona/README.md) for details.
 
 ---
 
-### Manual path — three steps
+## Manual install path (skip the skill)
+
+If you'd rather wire it by hand than use `/claude-daddy-mode`:
 
 ### Step 1 — Drop in the rules
 
 ```bash
 mkdir -p your-project/.claude/rules
 curl -o your-project/.claude/rules/AGENTS.md \
-  https://raw.githubusercontent.com/prashantpandey-creator/orchestrator-first/main/AGENTS.md
+  https://raw.githubusercontent.com/prashantpandey-creator/claude-daddy-mode/main/AGENTS.md
 ```
 
 Claude Code auto-loads `.claude/rules/` at CLAUDE.md priority for every session under your project root.
@@ -142,17 +175,13 @@ ln -s "$(pwd)/AGENTS.md" ".claude/rules/engineering.md"
 This is what makes the methodology enforced rather than advisory.
 
 ```bash
-# Copy the tool and hook into your project
 mkdir -p your-project/tools your-project/.claude/hooks
 cp -r tools/python/doc_path_audit your-project/tools/
 cp hooks/session-start.sh your-project/.claude/hooks/
 chmod +x your-project/.claude/hooks/session-start.sh
 ```
 
-Edit `your-project/.claude/hooks/session-start.sh` — change the `REPO_ROOT` line to point to your repo:
-```bash
-REPO_ROOT="$(cd "$(dirname "$0")/../.." 2>/dev/null && pwd)"
-```
+The shipped hook self-locates (no editing needed) and auto-picks the Python interpreter (venv → .venv → python3 → python).
 
 Add to `your-project/.claude/settings.local.json`:
 ```json
@@ -172,7 +201,7 @@ Add to `your-project/.claude/settings.local.json`:
 }
 ```
 
-Now every session opens with the audit result already in context — no rule to remember, no behavioral reliance.
+Use the absolute path — hook commands resolve from the Claude Code binary's directory, not the project root.
 
 ### Step 3 — Build your own tools from the template
 
@@ -194,9 +223,12 @@ cp -r tools/python/_template your-project/tools/your_tool_name
 ```
 AGENTS.md                     # The rules — drop into .claude/rules/
 hooks/
-  session-start.sh            # SessionStart hook — enforcement layer
+  session-start.sh            # SessionStart hook — enforcement layer (self-locating)
 skills/
-  orchestrator-first.md       # Install skill — copy to ~/.claude/skills/, then /orchestrator-first
+  claude-daddy-mode.md        # Install skill — /claude-daddy-mode wires both halves
+persona/
+  daddy.md                    # The output style — system-prompt-level voice
+  README.md                   # Persona usage + customization guide
 tools/
   python/
     _template/                # Copy this to build a new tool
@@ -209,11 +241,12 @@ examples/
 
 ## Implementation status
 
-| Pattern | Status | Enforced via |
-|---------|--------|-------------|
+| Piece | Status | Enforced via |
+|-------|--------|-------------|
 | Pre-flight Orientation | ✅ built + running | `SessionStart` hook in `settings.local.json` |
 | Branch-the-Future | ✅ proven on real data | proof-of-concept only, not wired as hook |
 | Assumption Tripwires | design only | `PreToolUse` hooks (not yet built) |
+| Daddy persona | ✅ shipping | `~/.claude/output-styles/daddy.md` + optional CLAUDE.md block |
 
 The key distinction: **rules load, hooks enforce.** AGENTS.md shapes behavior. The `SessionStart` hook is what makes Pattern 1 actually run every session regardless of whether the agent "remembers" to.
 
@@ -221,11 +254,12 @@ The key distinction: **rules load, hooks enforce.** AGENTS.md shapes behavior. T
 
 ## Why this works
 
-The methodology was developed on [PuranGPT](https://github.com/prashantpandey-creator/purangpt). The problems it solves are real:
+Developed on [PuranGPT](https://github.com/prashantpandey-creator/purangpt). The problems it solves are real:
 
 - A stale `engine/query_engine.py` reference in docs would have corrupted a session's map — the hook catches it before the first action
 - An SSE contract drift went undetected because the checker measured the wrong scope — the scope trap, now documented in every tool's `does_not_measure` section
 - A 3-hour, 4-commit revert loop was adjudicated by a verdict script in milliseconds — Branch-the-future proven on real git history
+- A sassy senior-dev voice ships better code review than a polite assistant — pushback catches the bad ideas earlier
 
 The envelope shape (`{success, data, metadata, errors}`) is compatible with MCP servers, Anthropic/OpenAI tool calling, and LangGraph — retiring a sub-agent is a drop-in swap.
 
