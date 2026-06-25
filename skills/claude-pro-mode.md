@@ -1,15 +1,15 @@
 ---
-name: claude-sir-mode
-description: Install Claude Sir Mode (Orchestrator-First methodology + composed-gentleman persona) into the current project and the user's global Claude config. Use when the user says "install claude sir mode", "set up the methodology", "wire the pre-flight hook", or "install the persona".
+name: claude-pro-mode
+description: Install Claude Pro Mode (Orchestrator-First methodology + cocky-but-competent persona) into the current project and the user's global Claude config. Use when the user says "install claude pro mode", "set up the methodology", "wire the pre-flight hook", or "install the persona".
 tools: Bash, Read, Write, Edit
 ---
 
-# Claude Sir Mode — Installer
+# Claude Pro Mode — Installer
 
-Install both halves of Claude Sir Mode:
+Install both halves of Claude Pro Mode:
 
 1. **Orchestrator-First methodology** (per project): AGENTS.md rules, doc_path_audit tool, SessionStart hook, settings patch
-2. **Sir persona** (per user, global): output style + optional CLAUDE.md block
+2. **Pro persona** (per user, global): output style + optional CLAUDE.md block
 
 The methodology is project-scoped. The persona is user-scoped. You can install
 either independently — ask the user which they want if it's unclear.
@@ -20,22 +20,22 @@ either independently — ask the user which they want if it's unclear.
 
 Default to installing BOTH. If the user only asks for one half, install only that half.
 
-- "install sir mode" / "install claude sir mode" → both
+- "install pro mode" / "install claude pro mode" → both
 - "install the orchestrator" / "wire the hook" → methodology only
-- "install the persona" / "install the sir voice" → persona only
+- "install the persona" / "install the pro voice" → persona only
 
 ### Step 1 — Locate the source repo
 
 ```bash
-ls ~/projects/claude-sir-mode/ 2>/dev/null || \
-ls ~/claude-sir-mode/ 2>/dev/null || \
+ls ~/projects/claude-pro-mode/ 2>/dev/null || \
+ls ~/claude-pro-mode/ 2>/dev/null || \
 ls ~/projects/orchestrator-first/ 2>/dev/null || \
 echo "not found locally"
 ```
 
 If not found, clone it:
 ```bash
-git clone https://github.com/prashantpandey-creator/claude-sir-mode ~/claude-sir-mode
+git clone https://github.com/prashantpandey-creator/claude-pro-mode ~/claude-pro-mode
 ```
 
 Set `REPO` to the resolved path.
@@ -150,14 +150,14 @@ If empty or errors, diagnose:
 
 ```bash
 mkdir -p ~/.claude/output-styles
-cp "$REPO/persona/sir.md" ~/.claude/output-styles/sir.md
+cp "$REPO/persona/pro.md" ~/.claude/output-styles/pro.md
 ```
 
 ### B2. Tell the user how to activate
 
 The output style is installed but not active by default. In Claude Code:
 ```
-/output-style sir
+/output-style pro
 ```
 
 ### B3. Optional — global CLAUDE.md reinforcement
@@ -166,17 +166,17 @@ Ask if the user wants the persona reinforced via the global CLAUDE.md too
 (belt-and-suspenders, survives style toggling). If yes:
 
 ```bash
-# Check whether a sir block already exists to avoid duplicates
-grep -q "name: sir" ~/.claude/CLAUDE.md 2>/dev/null && \
+# Check whether a pro block already exists to avoid duplicates
+grep -q "name: pro" ~/.claude/CLAUDE.md 2>/dev/null && \
   echo "already in ~/.claude/CLAUDE.md, skipping" || \
-  cat "$REPO/persona/sir.md" >> ~/.claude/CLAUDE.md
+  cat "$REPO/persona/pro.md" >> ~/.claude/CLAUDE.md
 ```
 
 ### B4. Customization prompt
 
-The persona addresses the user as "sir" by default. Remind the user: they can
-find/replace `sir` with any form of address they want in
-`~/.claude/output-styles/sir.md`, then rename the file and run
+The persona addresses the user as "bro" by default. Remind the user: they can
+find/replace `bro` with any form of address they want in
+`~/.claude/output-styles/pro.md`, then rename the file and run
 `/output-style <new-name>`.
 
 ---
@@ -187,11 +187,11 @@ Tell the user:
 - Methodology: what was installed, what the hook reported on first run (clean
   or stale paths), and that every new session under this project will open with
   the pre-flight audit result in context
-- Persona: that `/output-style sir` activates the voice, and they can rename
-  the form of address if "sir" isn't their thing
+- Persona: that `/output-style pro` activates the voice, and they can rename
+  the form of address if "bro" isn't their thing
 - Next step for verification: start a fresh Claude Code session and confirm both
   the `SessionStart hook additional context` appears at the top AND the voice
-  reads composed-and-candid from the first response
+  reads cocky-but-competent from the first response
 
 ## Important notes
 
